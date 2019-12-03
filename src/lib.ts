@@ -4,7 +4,10 @@ import "@berhalak/js"
 const { EOL } = require('os');
 
 export function lines() {
-    let raw = fs.readFileSync(path.join(__dirname, "./input.txt")).toString().trim();
-    let lines = raw.split(EOL);
+    let lines = input().split(EOL);
     return lines;
 }
+export function input() {
+    return fs.readFileSync(path.join(__dirname, "./input.txt")).toString().trim();
+}
+

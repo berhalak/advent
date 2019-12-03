@@ -1,4 +1,5 @@
 import { lines } from "./lib";
 
 
-console.log(lines());
+
+console.log(lines().invert());

@@ -13,19 +13,14 @@ function test(g: number) {
 
     // test same number
     let grouped = p.group(x => x);
-    if (!grouped.some(x => x.list.length == 2))
+    if (!grouped.some(x => x.list.length >= 2))
         return false;
 
-    var ok = true;
-
-    for (let i = 0; i < p.length - 1; i++) {
-        if (p[i] > p[i + 1]) {
-            ok = false;
-            break;
-        }
+    if (f != p.orderBy(x => x).join('')) {
+        return false;
     }
 
-    return ok;
+    return true;
 }
 
 function test2(g: number) {
@@ -34,33 +29,21 @@ function test2(g: number) {
     let p = f.split('');
 
     // test same number
-    let sums: any = {};
-    for (let i = 0; i < p.length - 1; i++) {
-        if (p[i] == p[i + 1]) {
-            sums[p[i]] = sums[p[i]] || 0;
-            sums[p[i]]++;
-        }
-    }
+    let grouped = p.group(x => x);
+    if (!grouped.some(x => x.list.length == 2))
+        return false;
 
-    if (!Object.values(sums).includes(1)) {
+
+    if (f != p.orderBy(x => x).join('')) {
         return false;
     }
 
 
-    let ok = true;
-
-    for (let i = 0; i < p.length - 1; i++) {
-        if (p[i] > p[i + 1]) {
-            ok = false;
-            break;
-        }
-    }
-
-    return ok;
+    return true;
 }
 
 for (let i = start; i <= end; i++) {
-    if (test(i)) count++;
+    if (test2(i)) count++;
 }
 
 console.log(count);

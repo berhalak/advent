@@ -1,8 +1,13 @@
+import { IncomingMessage } from "http";
+
 class Add {
     constructor(private pos: string) {
 
     }
-    invoke(index: number, input: number[], memory: number[]) {
+    invoke(run: Runtime, env: Env) {
+        let index = run.index;
+        let memory = run.memory;
+
         let a = memory[index + 1];
         let b = memory[index + 2];
         let c = memory[index + 3];
@@ -14,14 +19,11 @@ class Add {
         }
         if (bmode == '0') {
             let t = memory[b];
-            if (t == undefined) {
-                debugger;
-            }
             b = t;
         }
 
         memory[c] = a + b;
-        return index + 3;
+        run.index += 4;
     }
 }
 
@@ -30,7 +32,10 @@ class Mul {
 
     }
 
-    invoke(index: number, input: number[], memory: number[]) {
+    invoke(run: Runtime, env: Env) {
+        let index = run.index;
+        let memory = run.memory;
+
         let a = memory[index + 1];
         let b = memory[index + 2];
         let c = memory[index + 3];
@@ -44,7 +49,8 @@ class Mul {
             b = memory[b];
         }
         memory[c] = a * b;
-        return index + 3;
+        run.index += 4;
+
     }
 }
 
@@ -53,10 +59,14 @@ class Store {
 
     }
 
-    invoke(index: number, input: number[], memory: number[]) {
+    invoke(run: Runtime, env: Env) {
+        let index = run.index;
+        let memory = run.memory;
+
         let a = memory[index + 1];
-        memory[a] = input.shift() as number;
-        return index + 1;
+
+        memory[a] = env.input();
+        run.index += 2;
     }
 }
 
@@ -64,16 +74,20 @@ class Out {
     constructor(private pos: string) {
 
     }
-    invoke(index: number, input: number[], memory: number[]) {
+    invoke(run: Runtime, env: Env) {
+        let index = run.index;
+        let memory = run.memory;
+
         let a = memory[index + 1];
         let amode = this.pos[2];
 
         if (amode == '0') {
             a = memory[a];
         }
-        (input as any).out = a;
         //console.log(a);
-        return index + 1;
+        run.index += 2;
+
+        env.output(a);
     }
 }
 
@@ -82,7 +96,10 @@ class JumpFalse {
 
     }
 
-    invoke(index: number, input: number[], memory: number[]) {
+    invoke(run: Runtime, env: Env) {
+        let index = run.index;
+        let memory = run.memory;
+
         let a = memory[index + 1];
         let b = memory[index + 2];
         let c = memory[index + 3];
@@ -96,9 +113,10 @@ class JumpFalse {
             b = memory[b];
         }
         if (a == 0) {
-            return b - 1;
+            run.index = b;
+        } else {
+            run.index += 4;
         }
-        return index + 2;
     }
 }
 
@@ -108,7 +126,9 @@ class Equal {
 
     }
 
-    invoke(index: number, input: number[], memory: number[]) {
+    invoke(run: Runtime, env: Env) {
+        let index = run.index;
+        let memory = run.memory;
         let a = memory[index + 1];
         let b = memory[index + 2];
         let c = memory[index + 3];
@@ -122,7 +142,7 @@ class Equal {
             b = memory[b];
         }
         memory[c] = a == b ? 1 : 0;
-        return index + 3;
+        run.index += 4;
     }
 }
 
@@ -131,7 +151,10 @@ class LessThen {
 
     }
 
-    invoke(index: number, input: number[], memory: number[]) {
+    invoke(run: Runtime, env: Env) {
+        let index = run.index;
+        let memory = run.memory;
+
         let a = memory[index + 1];
         let b = memory[index + 2];
         let c = memory[index + 3];
@@ -145,7 +168,8 @@ class LessThen {
             b = memory[b];
         }
         memory[c] = a < b ? 1 : 0;
-        return index + 3;
+        run.index += 4;
+
     }
 }
 
@@ -154,7 +178,9 @@ class JumpTrue {
 
     }
 
-    invoke(index: number, input: number[], memory: number[]) {
+    invoke(run: Runtime, env: Env) {
+        let index = run.index;
+        let memory = run.memory;
         let a = memory[index + 1];
         let b = memory[index + 2];
         let c = memory[index + 3];
@@ -168,9 +194,10 @@ class JumpTrue {
             b = memory[b];
         }
         if (a != 0) {
-            return b - 1;
+            run.index = b;
+        } else {
+            run.index += 3;
         }
-        return index + 2;
     }
 }
 
@@ -207,23 +234,32 @@ function instruction(op: number) {
     }
 }
 
-export function run(input: number[], code: number[]): number {
 
-    let myInput = [...input];
-    let memory = [...code];
+export interface Env {
+    output(a: number): void;
+    input(): number;
+}
 
-    for (let i = 0; i < memory.length; i++) {
-        let opcode = memory[i];
+export class Runtime {
+    index = 0;
 
-        let ins = instruction(opcode);
-        if (ins == null) {
-            break;
-        }
-        let delta = ins.invoke(i, myInput, memory);
-        i = delta;
+    constructor(public memory: number[]) {
+
     }
 
-    return (myInput as any).out;
+    execute(env: Env) {
+        let memory = this.memory;
+        while (this.index < memory.length) {
+            let opcode = memory[this.index];
+
+            let ins = instruction(opcode);
+            if (ins == null) {
+                break;
+            }
+
+            ins.invoke(this, env);
+        }
+    }
 }
 
 

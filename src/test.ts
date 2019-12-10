@@ -65,9 +65,8 @@ if (test2(7) != 999) throw "Should be 999";
 if (test2(8) != 1000) throw "Should be 1000";
 if (test2(9) != 1001) throw "Should be 1001";
 
-prog = new Boost(memory, 5);
+prog = new Boost(memory, 2);
 prog.run();
 console.log("Final is " + prog.final);
 
-console.log(memory);
 

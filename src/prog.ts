@@ -20,7 +20,6 @@ class Base {
 			a = memory[a] || 0;
 		}
 
-		console.log(`Changing relative from ${run.relative} to ${run.relative + a}`)
 
 		run.relative += a;
 		run.index += 2;
@@ -62,7 +61,6 @@ class Add {
 			c = run.relative + c;
 		}
 
-		console.log(`[${index}] Adding ${a} + ${b} and storing in ${c}`);
 
 		if (a == 294) {
 			debugger;
@@ -196,8 +194,12 @@ class JumpFalse {
 			a = memory[run.relative + a] || 0;
 		}
 
+		if (bmode == position) {
+			b = memory[b] || 0;
+		}
+
 		if (bmode == relatvie) {
-			b = run.relative + b;
+			b = memory[run.relative + b] || 0
 		}
 
 		if (a == 0) {
@@ -302,12 +304,12 @@ class JumpTrue {
 		if (amode == '2') {
 			a = memory[run.relative + a] || 0;
 		}
-		// if (bmode == position) {
-		// 	b = memory[b];
-		// }
+		if (bmode == position) {
+			b = memory[b] || 0;
+		}
 
 		if (bmode == relatvie) {
-			b = run.relative + b;
+			b = memory[run.relative + b] || 0
 		}
 
 		if (a != 0) {
@@ -381,11 +383,13 @@ export class Runtime {
 
 			let ins = instruction(opcode);
 			if (ins === undefined) {
-				throw new Error("No instruction " + opcode)
+				throw new Error(this.index + " No instruction " + opcode)
 			}
 			if (ins == null) {
 				break;
 			}
+
+
 
 			ins.invoke(this, env);
 		}

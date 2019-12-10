@@ -1,4 +1,5 @@
 import { lines, read } from "./lib";
+import { hostname } from "os";
 
 let input = lines();
 
@@ -18,10 +19,37 @@ for (let i = 0; i < input.length; i++) {
 	}
 }
 
-let max = 0;
+
+function rad(degree: number) {
+	return degree * Math.PI / 180;
+}
+
+function deg(radian: number) {
+	return radian * 180 / Math.PI;
+}
 
 
 class Point {
+
+	angle(point: Point, fix = true) {
+		if (this.x == 12 && this.y == 1) {
+			//debugger;
+		}
+		let x = this.x - point.x;
+		let y = this.y - point.y;
+		let r = Math.atan2(y, x);
+		let out = deg(r);
+		if (fix) {
+			out = Math.floor(out);
+		}
+		while (out < 0) {
+			out += 360;
+		}
+		while (out > 360) {
+			out -= 360;
+		}
+		return out;
+	}
 
 	outside(my: Point, other: Point): boolean {
 		if (my.x == other.x) {
@@ -60,56 +88,6 @@ class Point {
 	}
 }
 
-function generate(f: Point, s: Point) {
-
-	if (f.x == s.x) {
-		return function (x: Point) {
-			return x.x == f.x;
-		}
-	}
-
-	if (f.y == s.y) {
-		return function (x: Point) {
-			return x.y == f.y;
-		}
-	}
-	return function (p: Point): boolean {
-
-		let x = p.x;
-
-		let a = (f.y - s.y) / (f.x - s.x);
-		let b = f.y - (f.y - s.y) * f.x / (f.x - s.x);
-		let y = (f.y - s.y) * x / (f.x - s.x) + b;
-
-		if (p.y != y && Math.abs(p.y - y) < 0.1) {
-			debugger;
-		}
-
-		return Math.abs(p.y - y) < 0.0001;
-	}
-}
-
-type Detector = (a: Point) => boolean;
-
-function detect(det: Detector): Point[] {
-	let res: Point[] = [];
-	for (let y = 0; y < map.length; y++) {
-		for (let x = 0; x < map[y].length; x++) {
-			if (!map[y][x]) {
-				continue;
-			}
-			let other = new Point(x, y);
-
-
-
-			if (det(other)) {
-				res.push(other);
-			}
-		}
-	}
-	return res;
-}
-
 
 function* aster() {
 	for (let y = 0; y < map.length; y++) {
@@ -123,67 +101,61 @@ function* aster() {
 	}
 }
 
-function find(px: number, py: number): number {
-	let my = new Point(px, py);
-	let sum = 0;
 
-	if (my.x == 2 && my.y == 2) {
-		debugger;
-	}
+let destroyed: Point[] = [];
 
-	for (let other of aster()) {
-		if (my.equals(other)) {
-			continue;
-		}
-		let fun = generate(my, other);
-		let asteroidsOnLine: Point[] = detect(fun);
-		let blocking = asteroidsOnLine.except([my, other]);
 
-		blocking.removeBy(x => {
-			return x.outside(my, other);
-		})
-
-		if (blocking.length) {
-			continue;
-		}
-		sum++;
-	}
-	//console.log(`${my} can ${sum}`);
-	map[py][px] = sum;
-	return sum;
+function eq(a: number, b: number) {
+	return Math.abs(a - b) < 0.0001;
 }
 
-let best: Point = null;
+let point = new Point(8, 3);
+let degree = 270;
 
-for (let y = 0; y < map.length; y++) {
-	for (let x = 0; x < map[y].length; x++) {
-		if (!map[y][x]) {
-			continue;
-		}
-		let can = find(x, y);
-		if (can > max) {
-			best = new Point(x, y);
-		}
-		max = Math.max(max, can);
+
+
+while (true) {
+
+
+	// find points on the same line
+	let onLine = [...aster()].filter(x => !x.equals(point) && x.angle(point) == degree).orderBy(x => x.distance(point));
+
+	let first = onLine.first();
+	if (first) {
+		console.log(`Destroying ${first} ${destroyed.length} ${first.angle(point, false)}`);
+
+		destroyed.push(first);
+		map[first.y][first.x] = 0;
 	}
+
+	if (destroyed.length == 200) {
+		console.log(first);
+		console.log(first.x * 100 + first.y);
+		break;
+	}
+
+
+	degree += 1;
+	if (degree == 360) degree = 0;
 }
 
-console.log(max);
-console.log(best);
 
-for (let y = 0; y < map.length; y++) {
-	let s = y.toString().padStart(3) + " ";
-	for (let x = 0; x < map[y].length; x++) {
-		let w = x.toString().padStart(3) + " ";
-		s += w;
-	}
-	if (y == 0)
+function print() {
+	for (let y = 0; y < map.length; y++) {
+		let s = y.toString().padStart(3) + " ";
+		for (let x = 0; x < map[y].length; x++) {
+			let w = x.toString().padStart(3) + " ";
+			s += w;
+		}
+		if (y == 0)
+			console.log(s);
+		s = y.toString().padStart(3) + " ";
+
+		for (let x = 0; x < map[y].length; x++) {
+			let w = map[y][x].toString().padStart(3) + " ";
+			s += w;
+		}
 		console.log(s);
-	s = y.toString().padStart(3) + " ";
-
-	for (let x = 0; x < map[y].length; x++) {
-		let w = map[y][x].toString().padStart(3) + " ";
-		s += w;
 	}
-	console.log(s);
+
 }

@@ -110,7 +110,7 @@ function ast() {
 
 
 let destroyed: Point[] = [];
-let point = new Point(11, 13);
+let point = new Point(27, 19);
 while (true) {
 	// order by angle
 	let grouped = ast().except([point]).orderBy(x => x.distance(point)).group(x => x.clock(point));

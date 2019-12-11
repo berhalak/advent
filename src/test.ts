@@ -40,18 +40,7 @@ class Point {
 		let x = this.x - point.x;
 		let y = point.y - this.y;
 
-		let angle = Math.angle(y, x);
-		if (angle == 90) {
-			angle = 0;
-		} else if (angle > 90) {
-			angle = 360 - (angle - 90);
-		} else {
-			angle = - (angle - 90);
-		}
-		if (Math.abs(angle) == 0) {
-			angle = 0;
-		}
-		return angle;
+		return Math.clock(Math.angle(y, x));
 	}
 
 	outside(my: Point, other: Point): boolean {

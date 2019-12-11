@@ -11,6 +11,12 @@ export function read() {
 	return fs.readFileSync(path.join(__dirname, "./input.txt")).toString().trim();
 }
 
+export class Point {
+	constructor(public x: number, public y: number) {
+
+	}
+}
+
 declare global {
 	interface Math {
 		angle(y: number, x: number): number;

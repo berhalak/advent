@@ -1,5 +1,37 @@
 import { IncomingMessage } from "http";
 import { createWriteStream } from "fs";
+import { Point } from "./lib";
+
+export class Canvas<T> {
+	painted(): any {
+		let sum = 0;
+		for (let key in this.data) {
+			sum += Object.keys(this.data[key]).length;
+		}
+		return sum;
+	}
+
+	set(x: number, y: number, value: T) {
+		this.data[y] = this.data[y] || {};
+		this.data[y][x] = value;
+	}
+
+	get(x: number, y: number): T | null {
+		if (this.data[y]) return this.data[y][x];
+		return null;
+	}
+
+	paint(p: Point, color: T) {
+		this.set(p.x, p.y, color);
+	}
+
+	at(p: Point) {
+		return this.get(p.x, p.y);
+	}
+
+
+	private data: any = {};
+}
 
 class Base {
 	constructor(private pos: string) {

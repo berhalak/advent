@@ -2,7 +2,34 @@ import { IncomingMessage } from "http";
 import { createWriteStream } from "fs";
 import { Point } from "./lib";
 
-export class Canvas<T> {
+export class Canvas {
+
+	draw() {
+
+		let rowNumbers = Object.keys(this.data).map(x => x.toNumber());
+		let firstRow = rowNumbers.min(0) as number;
+		let lastRow = rowNumbers.max(0) as number;
+
+		let firstCol = 0;
+		let lastCol = 0;
+
+		for (let row of Object.values(this.data)) {
+			let colNumbers = Object.keys(row as any).map(x => x.toNumber());
+			firstCol = Math.min(firstCol, colNumbers.min() as number);
+			lastCol = Math.max(lastCol, colNumbers.max() as number);
+		}
+
+		for (let y = lastRow; y >= firstRow; y--) {
+			let s = "";
+			for (let x = firstCol; x <= lastCol; x++) {
+				let color = this.get(x, y);
+				s += color ? "# " : "  ";
+			}
+			console.log(s);
+		}
+	}
+
+
 	painted(): any {
 		let sum = 0;
 		for (let key in this.data) {
@@ -11,17 +38,23 @@ export class Canvas<T> {
 		return sum;
 	}
 
-	set(x: number, y: number, value: T) {
+	set(x: number, y: number, value: number) {
 		this.data[y] = this.data[y] || {};
 		this.data[y][x] = value;
 	}
 
-	get(x: number, y: number): T | null {
-		if (this.data[y]) return this.data[y][x];
-		return null;
+	get(x: number, y: number): number {
+		let val = 1;
+		if (this.data[y]) {
+			let row = this.data[y];
+			if (x.toString() in row) {
+				return row[x];
+			}
+		}
+		return val;
 	}
 
-	paint(p: Point, color: T) {
+	paint(p: Point, color: number) {
 		this.set(p.x, p.y, color);
 	}
 
@@ -51,7 +84,6 @@ class Base {
 		if (amode == position) {
 			a = memory[a] || 0;
 		}
-
 
 		run.relative += a;
 		run.index += 2;
@@ -94,9 +126,6 @@ class Add {
 		}
 
 
-		if (a == 294) {
-			debugger;
-		}
 
 		run.set(c, a + b);
 
@@ -396,9 +425,7 @@ export interface Env {
 
 export class Runtime {
 	set(c: number, arg1: number) {
-		if (arg1 == 227) {
-			debugger;
-		}
+
 		this.memory[c] = arg1;
 	}
 	index = 0;

@@ -62,7 +62,7 @@ class Robot implements Env {
 		this.c.paint(this.position, color);
 	}
 
-	c = new Canvas<number>();
+	c = new Canvas();
 	state: State = new State();
 	position = new Point(0, 0);
 	direction = new Direction();
@@ -76,7 +76,7 @@ class Robot implements Env {
 	}
 
 	input(): number {
-		return this.c.at(this.position) || 0;
+		return this.c.at(this.position);
 	}
 
 	run() {
@@ -89,3 +89,5 @@ let r = new Robot(memory);
 r.run();
 
 console.log(r.c.painted());
+
+r.c.draw();

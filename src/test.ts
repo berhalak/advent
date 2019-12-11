@@ -31,24 +31,27 @@ function deg(radian: number) {
 
 class Point {
 
-	angle(point: Point, fix = true) {
-		if (this.x == 12 && this.y == 1) {
-			//debugger;
+	clock(point: Point, fix = true) {
+
+		if (this.x == 11 && this.y == 12) {
+			debugger;
 		}
+
 		let x = this.x - point.x;
-		let y = this.y - point.y;
-		let r = Math.atan2(y, x);
-		let out = deg(r);
-		if (fix) {
-			out = Math.floor(out);
+		let y = point.y - this.y;
+
+		let angle = Math.angle(y, x);
+		if (angle == 90) {
+			angle = 0;
+		} else if (angle > 90) {
+			angle = 360 - (angle - 90);
+		} else {
+			angle = - (angle - 90);
 		}
-		while (out < 0) {
-			out += 360;
+		if (Math.abs(angle) == 0) {
+			angle = 0;
 		}
-		while (out > 360) {
-			out -= 360;
-		}
-		return out;
+		return angle;
 	}
 
 	outside(my: Point, other: Point): boolean {
@@ -101,42 +104,31 @@ function* aster() {
 	}
 }
 
-
-let destroyed: Point[] = [];
-
-
-function eq(a: number, b: number) {
-	return Math.abs(a - b) < 0.0001;
+function ast() {
+	return [...aster()];
 }
 
-let point = new Point(8, 3);
-let degree = 270;
 
-
-
+let destroyed: Point[] = [];
+let point = new Point(11, 13);
 while (true) {
-
-
-	// find points on the same line
-	let onLine = [...aster()].filter(x => !x.equals(point) && x.angle(point) == degree).orderBy(x => x.distance(point));
-
-	let first = onLine.first();
-	if (first) {
-		console.log(`Destroying ${first} ${destroyed.length} ${first.angle(point, false)}`);
-
+	// order by angle
+	let grouped = ast().except([point]).orderBy(x => x.distance(point)).group(x => x.clock(point));
+	for (let g of grouped.orderBy(x => x.key)) {
+		let first = g.list.first();
 		destroyed.push(first);
-		map[first.y][first.x] = 0;
-	}
 
+		console.log(`${destroyed.length} = ${first}`);
+
+		if (destroyed.length == 200) {
+			break;
+		}
+	}
 	if (destroyed.length == 200) {
-		console.log(first);
-		console.log(first.x * 100 + first.y);
+		let last = destroyed.last();
+		console.log(last);
 		break;
 	}
-
-
-	degree += 1;
-	if (degree == 360) degree = 0;
 }
 
 
@@ -157,5 +149,4 @@ function print() {
 		}
 		console.log(s);
 	}
-
 }

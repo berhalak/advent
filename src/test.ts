@@ -5,21 +5,48 @@ let code = readCode();
 
 class Board extends Canvas<Tile> {
 
-}
+	constructor(private g: Game) {
+		super(new Empty());
+	}
 
-class Tile {
-	static handle(x: number, y: number, type: number, c: Board): void {
-		c.set(x, y, new Tile());
+	paintCell(color: Tile) {
+		return color.paint();
+	}
+
+	set(x: number, y: number, t: Tile) {
+		if (t.constructor == Ball) {
+			g.ballAt(x, y);
+		}
+		if (t.constructor == Paddle) {
+			g.padAt(x, y);
+		}
+		super.set(x, y, t);
 	}
 }
 
+abstract class Tile {
+	static handle(x: number, y: number, type: number, c: Board): void {
+		return;
+	}
+	abstract paint(): string;
+}
+
+
+
+
 class Empty extends Tile {
+	paint(): string {
+		return " "
+	}
 	static handle(x: number, y: number, type: number, c: Board): void {
 		if (type != 0) return;
 		c.set(x, y, new Empty());
 	}
 }
 class Wall extends Tile {
+	paint(): string {
+		return "█"
+	}
 	static handle(x: number, y: number, type: number, c: Board): void {
 		if (type != 1) return;
 
@@ -27,6 +54,9 @@ class Wall extends Tile {
 	}
 }
 class Block extends Tile {
+	paint(): string {
+		return "#"
+	}
 	static handle(x: number, y: number, type: number, c: Board): void {
 		if (type != 2) return;
 
@@ -34,6 +64,9 @@ class Block extends Tile {
 	}
 }
 class Paddle extends Tile {
+	paint(): string {
+		return "▄";
+	}
 	static handle(x: number, y: number, type: number, c: Board): void {
 		if (type != 3) return;
 
@@ -41,6 +74,9 @@ class Paddle extends Tile {
 	}
 }
 class Ball extends Tile {
+	paint(): string {
+		return "◌";
+	}
 	static handle(x: number, y: number, type: number, c: Board): void {
 		if (type != 4) return;
 
@@ -50,7 +86,7 @@ class Ball extends Tile {
 
 class Instruction {
 
-	constructor(private c: Board) {
+	constructor(private c: Board, private g: Game) {
 
 	}
 
@@ -62,29 +98,64 @@ class Instruction {
 			this.stack = [];
 		}
 	}
+
+
 	handle(stack: number[]) {
 		let type = stack.last() as number;
 		let x = stack[0];
 		let y = stack[1];
 
+		if (x == -1) {
+			this.g.current(type);
+			return;
+		}
+
 		let tiles = [Empty, Block, Wall, Paddle, Ball];
+
+
 
 		tiles.forEach(t => t.handle(x, y, type, this.c));
 	}
 }
 
 class Game implements Env {
+	ball: Point = new Point(0, 0);
+	pad: Point = new Point(0, 0);
 
-	c = new Board(new Empty());
+	ballAt(x: number, y: number) {
+		this.ball = new Point(x, y);
+	}
 
-	i = new Instruction(this.c);
+	padAt(x: number, y: number) {
+		this.pad = new Point(x, y);
+	}
+
+	current(type: number) {
+		this.score = type;
+	}
+
+	score = 0;
+
+	c = new Board(this);
+
+	i = new Instruction(this.c, this);
 
 	output(a: number): void {
 		this.i.push(a);
 	}
 
 	input(): number {
-		throw new Error("Method not implemented.");
+		const left = -1;
+		const right = 1;
+		const stay = 0;
+
+		// is right
+		if (this.ball.x > this.pad.x) {
+			return right;
+		} else if (this.ball.x < this.pad.x) {
+			return left;
+		}
+		return stay;
 	}
 
 	constructor(private code: number[]) {
@@ -95,10 +166,17 @@ class Game implements Env {
 		let r = new Runtime(this.code);
 		r.execute(this);
 	}
+
+	turnOn() {
+		this.code[0] = 2;
+	}
 }
 
+
+
 let g = new Game(code);
+g.turnOn();
 g.run();
 
-let answer = [...g.c.all()].filter(x => x.constructor == Block).length
-console.log(answer);
+
+console.log(g.score);

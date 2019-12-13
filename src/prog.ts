@@ -33,10 +33,13 @@ export class Canvas<T> {
 			let s = "";
 			for (let x = firstCol; x <= lastCol; x++) {
 				let color = this.get(x, y);
-				s += color ? "# " : "  ";
+				s += this.paintCell(color);
 			}
 			console.log(s);
 		}
+	}
+	paintCell(color: T): string {
+		return color ? "# " : "  ";
 	}
 
 	constructor(private def: T) {

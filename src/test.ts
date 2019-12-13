@@ -1,167 +1,104 @@
 import { lines, read, Point } from "./lib";
-import { Runtime, Env, Canvas } from "./prog";
-import { uptime } from "os";
+import { Runtime, Env, Canvas, readCode } from "./prog";
 
+let code = readCode();
 
-class Cords {
-	constructor(public x: number, public y: number, public z: number) {
+class Board extends Canvas<Tile> {
 
-	}
+}
 
-	zero() {
-		return this.x == 0 && this.y == 0 && this.z == 0;
-	}
-
-	power(): number {
-		return Math.abs(this.x) + Math.abs(this.y) + Math.abs(this.z);
-	}
-
-	toString() {
-		return `<x=${this.x}, y=${this.y}, z=${this.z}>`;
-	}
-
-	equals(pos: Cords) {
-		return this.x == pos.x && this.y == pos.y && this.z == pos.z;
+class Tile {
+	static handle(x: number, y: number, type: number, c: Board): void {
+		c.set(x, y, new Tile());
 	}
 }
 
-class Position extends Cords {
-	clone(): Position {
-		return new Position(this.x, this.y, this.z);
+class Empty extends Tile {
+	static handle(x: number, y: number, type: number, c: Board): void {
+		if (type != 0) return;
+		c.set(x, y, new Empty());
 	}
+}
+class Wall extends Tile {
+	static handle(x: number, y: number, type: number, c: Board): void {
+		if (type != 1) return;
 
-	move(vel: Velocity) {
-		this.x += vel.x;
-		this.y += vel.y;
-		this.z += vel.z;
+		c.set(x, y, new Wall());
+	}
+}
+class Block extends Tile {
+	static handle(x: number, y: number, type: number, c: Board): void {
+		if (type != 2) return;
+
+		c.set(x, y, new Block());
+	}
+}
+class Paddle extends Tile {
+	static handle(x: number, y: number, type: number, c: Board): void {
+		if (type != 3) return;
+
+		c.set(x, y, new Paddle());
+	}
+}
+class Ball extends Tile {
+	static handle(x: number, y: number, type: number, c: Board): void {
+		if (type != 4) return;
+
+		c.set(x, y, new Ball());
 	}
 }
 
-class Velocity extends Cords {
-	clone(): Velocity {
-		return new Velocity(this.x, this.y, this.z);
-	}
+class Instruction {
 
-	adjust(other: Position, mine: Position) {
-		let x = other.x > mine.x ? this.x + 1 :
-			other.x < mine.x ? this.x - 1 : this.x;
-
-		let y = other.y > mine.y ? this.y + 1 :
-			other.y < mine.y ? this.y - 1 : this.y;
-
-		let z = other.z > mine.z ? this.z + 1 :
-			other.z < mine.z ? this.z - 1 : this.z;
-
-		this.x = x;
-		this.y = y;
-		this.z = z;
-	}
-}
-
-class Orbit {
-	constructor(private points: number[]) {
+	constructor(private c: Board) {
 
 	}
 
-	int() {
-		let velocity = this.points.map(x => 0);
-		let position = this.points.slice();
-		let step = 0;
-		do {
-			step++;
-			for (let i = 0; i < velocity.length; i++) {
-				let my = position[i];
-				let after = position.filter(x => x > my).length - position.filter(x => x < my).length;
-				velocity[i] += after;
-			}
-			velocity.forEach((v, i) => position[i] += v);
-		} while (position.equals(this.points) == false);
-		return step;
-	}
-}
-
-
-class Moon {
-
-	pool(moons: Moon[]) {
-		for (let b = 0; b < moons.length; b++) {
-			let second = moons[b];
-			if (second == this) continue;
-			this.adjustVelocity(second.pos);
+	stack: number[] = [];
+	push(n: number) {
+		this.stack.push(n);
+		if (this.stack.length == 3) {
+			this.handle(this.stack);
+			this.stack = [];
 		}
 	}
+	handle(stack: number[]) {
+		let type = stack.last() as number;
+		let x = stack[0];
+		let y = stack[1];
 
-	samez() {
-		return this.vel.z == 0 && this.start.z == this.pos.z;
-	}
+		let tiles = [Empty, Block, Wall, Paddle, Ball];
 
-	samey() {
-		return this.vel.y == 0 && this.start.y == this.pos.y;
-	}
-
-	samex() {
-		return this.vel.x == 0 && this.start.x == this.pos.x;
-	}
-
-	start!: Position;
-
-	equals(arg0: Moon) {
-		return this.vel.zero() && this.pos.equals(arg0.pos);
-	}
-
-	toString() {
-		return `pos=${this.pos}, vel=${this.vel}`
-	}
-
-	get pot() {
-		return this.pos.power();
-	}
-	get kin() {
-		return this.vel.power();
-	}
-	total(): any {
-		let z = this.pot * this.kin;
-		return z;
-	}
-
-	history: Position[] = [];
-	index = 0;
-
-	move() {
-		this.pos.move(this.vel);
-	}
-
-	adjustVelocity(other: Position) {
-		this.vel.adjust(other, this.pos);
-	}
-
-	pos!: Position;
-	vel!: Velocity;
-
-	constructor(raw: string) {
-		raw = raw.replace("<", "").replace(">", "");
-		let parts = raw.split(',').map(x => x.trim()).map(x => x.substr(2).toNumber());
-
-		let x = parts[0];
-		let y = parts[1];
-		let z = parts[2];
-		this.pos = new Position(x, y, z);
-		this.vel = new Velocity(0, 0, 0);
-
-		this.start = new Position(x, y, z);
-		this.history = [this.start];
+		tiles.forEach(t => t.handle(x, y, type, this.c));
 	}
 }
 
-let moons = lines().map(x => new Moon(x));
+class Game implements Env {
 
+	c = new Board(new Empty());
 
-let xorbit = new Orbit(moons.map(x => x.pos.x));
-let yorbit = new Orbit(moons.map(x => x.pos.y));
-let zorbit = new Orbit(moons.map(x => x.pos.z));
+	i = new Instruction(this.c);
 
-let orbits = [zorbit, yorbit, xorbit];
+	output(a: number): void {
+		this.i.push(a);
+	}
 
-let values = orbits.map(x => x.int());
+	input(): number {
+		throw new Error("Method not implemented.");
+	}
 
-console.log(Math.lcm(...values));
+	constructor(private code: number[]) {
+
+	}
+
+	run() {
+		let r = new Runtime(this.code);
+		r.execute(this);
+	}
+}
+
+let g = new Game(code);
+g.run();
+
+let answer = [...g.c.all()].filter(x => x.constructor == Block).length
+console.log(answer);

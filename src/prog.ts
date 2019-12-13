@@ -1,8 +1,18 @@
 import { IncomingMessage } from "http";
 import { createWriteStream } from "fs";
-import { Point } from "./lib";
+import { Point, read } from "./lib";
 
-export class Canvas {
+export class Canvas<T> {
+
+	*all() {
+		for (let row of Object.values(this.data)) {
+			if (typeof row == 'object') {
+				for (let cell of Object.values(row as any)) {
+					yield cell as T;
+				}
+			}
+		}
+	}
 
 	draw() {
 
@@ -29,6 +39,9 @@ export class Canvas {
 		}
 	}
 
+	constructor(private def: T) {
+
+	}
 
 	painted(): any {
 		let sum = 0;
@@ -38,13 +51,13 @@ export class Canvas {
 		return sum;
 	}
 
-	set(x: number, y: number, value: number) {
+	set(x: number, y: number, value: T) {
 		this.data[y] = this.data[y] || {};
 		this.data[y][x] = value;
 	}
 
-	get(x: number, y: number): number {
-		let val = 1;
+	get(x: number, y: number): T {
+		let val = this.def;
 		if (this.data[y]) {
 			let row = this.data[y];
 			if (x.toString() in row) {
@@ -54,7 +67,7 @@ export class Canvas {
 		return val;
 	}
 
-	paint(p: Point, color: number) {
+	paint(p: Point, color: T) {
 		this.set(p.x, p.y, color);
 	}
 
@@ -90,6 +103,11 @@ class Base {
 	}
 }
 
+
+export function readCode() {
+	let code = read().trim().split(',').map(x => x.toNumber());
+	return code;
+}
 
 
 class Add {

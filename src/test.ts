@@ -1,182 +1,204 @@
 import { lines, read, Point } from "./lib";
 import { Runtime, Env, Canvas, readCode } from "./prog";
 
-let code = readCode();
+let input = lines();
 
-class Board extends Canvas<Tile> {
-
-	constructor(private g: Game) {
-		super(new Empty());
+class Chemical {
+	with(made: number): Chemical {
+		let w = new Chemical('');
+		w.size = made;
+		w.name = this.name;
+		return w;
+	}
+	sub(have: number): Chemical {
+		let w = new Chemical('');
+		w.size = this.size - have;
+		w.name = this.name;
+		return w;
+	}
+	mul(want: number) {
+		let w = new Chemical('');
+		w.size = this.size * want;
+		w.name = this.name;
+		return w;
 	}
 
-	paintCell(color: Tile) {
-		return color.paint();
+	toString() {
+		return `${this.size} ${this.name}`;
 	}
 
-	set(x: number, y: number, t: Tile) {
-		if (t.constructor == Ball) {
-			g.ballAt(x, y);
-		}
-		if (t.constructor == Paddle) {
-			g.padAt(x, y);
-		}
-		super.set(x, y, t);
-	}
-}
+	size: number;
+	name: string;
 
-abstract class Tile {
-	static handle(x: number, y: number, type: number, c: Board): void {
-		return;
-	}
-	abstract paint(): string;
-}
-
-
-
-
-class Empty extends Tile {
-	paint(): string {
-		return " "
-	}
-	static handle(x: number, y: number, type: number, c: Board): void {
-		if (type != 0) return;
-		c.set(x, y, new Empty());
-	}
-}
-class Wall extends Tile {
-	paint(): string {
-		return "█"
-	}
-	static handle(x: number, y: number, type: number, c: Board): void {
-		if (type != 1) return;
-
-		c.set(x, y, new Wall());
-	}
-}
-class Block extends Tile {
-	paint(): string {
-		return "#"
-	}
-	static handle(x: number, y: number, type: number, c: Board): void {
-		if (type != 2) return;
-
-		c.set(x, y, new Block());
-	}
-}
-class Paddle extends Tile {
-	paint(): string {
-		return "▄";
-	}
-	static handle(x: number, y: number, type: number, c: Board): void {
-		if (type != 3) return;
-
-		c.set(x, y, new Paddle());
-	}
-}
-class Ball extends Tile {
-	paint(): string {
-		return "◌";
-	}
-	static handle(x: number, y: number, type: number, c: Board): void {
-		if (type != 4) return;
-
-		c.set(x, y, new Ball());
-	}
-}
-
-class Instruction {
-
-	constructor(private c: Board, private g: Game) {
-
-	}
-
-	stack: number[] = [];
-	push(n: number) {
-		this.stack.push(n);
-		if (this.stack.length == 3) {
-			this.handle(this.stack);
-			this.stack = [];
+	constructor(txt: string) {
+		if (txt) {
+			let p = txt.split(' ');
+			this.size = p[0].toNumber();
+			this.name = p[1];
+		} else {
+			this.size = 0;
+			this.name = '';
 		}
 	}
+}
 
 
-	handle(stack: number[]) {
-		let type = stack.last() as number;
-		let x = stack[0];
-		let y = stack[1];
+interface IReaction {
+	parts(): Chemical[];
+	size: number;
+	name: string;
+}
 
-		if (x == -1) {
-			this.g.current(type);
+
+class Recipe {
+
+	make(toDo: Chemical, c: Store) {
+		let fun = this.get(toDo.name);
+
+		let can = toDo.size;
+
+		if (can < fun.size) {
+			can = fun.size;
+		} else if (can > fun.size) {
+			can = Math.ceil(can / fun.size) * fun.size;
+		}
+
+		let size = can / fun.size;
+
+
+		for (let p of fun.parts()) {
+			c.youNeed(p.mul(size), toDo.with(fun.size).toString());
+		}
+
+		c.youMade(toDo.with(can));
+	}
+
+	constructor(private list: Reaction[]) {
+
+	}
+
+	get(name: string): IReaction {
+		if (name == "ORE") {
+			return new Ore();
+		}
+		return this.list.find(x => x.name == name) as IReaction;
+	}
+}
+
+
+
+class Reaction {
+	parts() {
+		return this.from;
+	}
+	get name() {
+		return this.out.name;
+	}
+	get size() {
+		return this.out.size;
+	}
+
+	private from: Chemical[];
+	private out: Chemical;
+
+	constructor(line: string) {
+		let p = line.split('=>').map(x => x.trim());
+		let from = p[0];
+		let to = p[1];
+
+		let ing = from.split(', ');
+
+		let chemicals = ing.map(x => new Chemical(x));
+		let out = new Chemical(to);
+
+		this.from = chemicals;
+		this.out = out;
+	}
+}
+
+
+class Ore implements IReaction {
+	name = 'ORE';
+	parts() {
+		return [];
+	}
+	get size() {
+		return 1;
+	}
+}
+
+
+function log(s: any) {
+	//console.log(s);
+}
+
+let recipe = new Recipe(input.map(x => new Reaction(x)));
+
+class Store {
+	fuel(): any {
+		return this.data["FUEL"];
+	}
+	youMade(p: Chemical) {
+		this.data[p.name] = this.data[p.name] || 0;
+		this.data[p.name] += p.size;
+		log(`you made ${p}`);
+	}
+
+	data: any = {};
+
+	youNeed(p: Chemical, forr: string) {
+		if (p.name == "ORE") {
+			this.data["ORE"] = this.data["ORE"] || 0;
+
+			if (this.data["ORE"] + p.size >= 1000000000000) {
+				//console.log("About to add " + p.size);
+				throw new Error();
+			}
+			this.data["ORE"] += p.size;
+
+
+			log(`spending ${p.size} for ${forr}`);
 			return;
 		}
 
-		let tiles = [Empty, Block, Wall, Paddle, Ball];
 
+		this.data[p.name] = this.data[p.name] || 0;
+		let have = this.data[p.name];
+		log(`you need ${p} and you have ${have}`);
 
-
-		tiles.forEach(t => t.handle(x, y, type, this.c));
-	}
-}
-
-class Game implements Env {
-	ball: Point = new Point(0, 0);
-	pad: Point = new Point(0, 0);
-
-	ballAt(x: number, y: number) {
-		this.ball = new Point(x, y);
-	}
-
-	padAt(x: number, y: number) {
-		this.pad = new Point(x, y);
-	}
-
-	current(type: number) {
-		this.score = type;
-	}
-
-	score = 0;
-
-	c = new Board(this);
-
-	i = new Instruction(this.c, this);
-
-	output(a: number): void {
-		this.i.push(a);
-	}
-
-	input(): number {
-		const left = -1;
-		const right = 1;
-		const stay = 0;
-
-		// is right
-		if (this.ball.x > this.pad.x) {
-			return right;
-		} else if (this.ball.x < this.pad.x) {
-			return left;
+		if (have >= p.size) {
+			this.data[p.name] -= p.size;
+			return;
 		}
-		return stay;
+		let todo = p.sub(have);
+		this.data[todo.name] = 0;
+		recipe.make(todo, this);
+		this.data[todo.name] -= todo.size;
+
 	}
 
-	constructor(private code: number[]) {
+}
 
+let m = 3 * 1000 * 1000;
+
+m = 4070011;
+
+console.log("Start " + m)
+
+while (true) {
+	m--;
+
+	let c = new Store();
+	let f = new Chemical(`${m} FUEL`);
+	try {
+		recipe.make(f, c);
+	} catch (e) {
+		continue;
 	}
 
-	run() {
-		let r = new Runtime(this.code);
-		r.execute(this);
-	}
-
-	turnOn() {
-		this.code[0] = 2;
-	}
+	console.log(m);
+	console.log(c.data["ORE"]);
+	break;
 }
 
 
-
-let g = new Game(code);
-g.turnOn();
-g.run();
-
-
-console.log(g.score);

@@ -82,7 +82,7 @@ class Direction {
 
 }
 
-let board = new Plan(' ');
+let plan = new Plan(' ');
 
 let count = 10;
 
@@ -99,46 +99,55 @@ class Remote implements Env {
 	pointer = new Direction();
 	prev = new Direction();
 
+	count = 0;
+
 	output(a: number): void {
 		if (a == free) {
-
+			count++;
+			this.pos = this.next;
 		} else if (a == wall) {
-
-
+			this.wallAt(this.next);
 		} else if (a == oxygen) {
 
 		}
 	}
 
 
+	wallAt(next: Point) {
+		plan.paint(next, '#');
+		if (!this.hit) {
+			this.hit = true;
+			this.right();
+		}
+	}
+
+	right() {
+		throw new Error("Method not implemented.");
+	}
+
 	input(): number {
 		if (!this.hit) {
-			this.next = this.pos.up();
-			return north;
+			return this.drive();
 		}
 
-		// try left
-		this.pointer = this.pointer.turnLeft();
-		if (this.test(this.pointer.next(this.pos))) {
-			this.next = this.pointer.next(this.pos);
-			this.prev = this.pointer.turnRight();
-			return this.pointer.dir();
-		}
+		if (this.knowLeft()) {
+			if (this.leftWall()) {
 
-		let size = 5;
-		while (size-- > 0) {
-			this.pointer = this.pointer.turnRight();
-			if (this.test(this.pointer.next(this.pos))) {
-				this.next = this.pointer.next(this.pos);;
-				return this.pointer.dir();
 			}
+		} else {
+			this.turnLeft();
+			return this.drive();
 		}
+	}
 
-		throw new Error();
+
+	drive(): number {
+		this.next = this.pos.up();
+		return north;
 	}
 
 	test(arg0: Point) {
-		return board.at(arg0) == ' ' || board.at(arg0) == '.';
+		return plan.at(arg0) == ' ' || plan.at(arg0) == '.';
 	}
 
 	run() {
@@ -153,7 +162,7 @@ class Remote implements Env {
 }
 
 // draw droid on center
-board.set(0, 0, '.');
+plan.set(0, 0, '.');
 
 let r = new Remote();
 r.run();

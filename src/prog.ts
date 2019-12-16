@@ -14,6 +14,14 @@ export class Canvas<T> {
 		}
 	}
 
+	*iter() {
+		for (let row of Object.keys(this.data)) {
+			for (let col of Object.keys(this.data[row])) {
+				yield new Point(col.toNumber(), row.toNumber());
+			}
+		}
+	}
+
 	dump() {
 
 		let rowNumbers = Object.keys(this.data).map(x => x.toNumber());
@@ -79,7 +87,7 @@ export class Canvas<T> {
 	}
 
 
-	private data: any = {};
+	protected data: any = {};
 }
 
 class Base {
@@ -249,7 +257,7 @@ class Out {
 
 		run.index += 2;
 
-		env.output(a);
+		return env.output(a);
 	}
 }
 
@@ -440,7 +448,7 @@ function instruction(op: number) {
 
 
 export interface Env {
-	output(a: number): void;
+	output(a: number): boolean;
 	input(): number;
 }
 
@@ -471,7 +479,9 @@ export class Runtime {
 
 
 
-			ins.invoke(this, env);
+			if (ins.invoke(this, env) === false) {
+				return;
+			}
 		}
 	}
 }

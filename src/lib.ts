@@ -12,6 +12,9 @@ export function read() {
 }
 
 export class Point {
+	equals(pos: Point) {
+		return this == pos || (this.x == pos.x && this.y == pos.y);
+	}
 	constructor(public x: number, public y: number) {
 
 	}

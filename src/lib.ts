@@ -15,4 +15,20 @@ export class Point {
 	constructor(public x: number, public y: number) {
 
 	}
+
+	up() {
+		return new Point(this.x, this.y + 1);
+	}
+
+	down() {
+		return new Point(this.x, this.y - 1);
+	}
+
+	left() {
+		return new Point(this.x - 1, this.y);
+	}
+
+	right() {
+		return new Point(this.x + 1, this.y);
+	}
 }

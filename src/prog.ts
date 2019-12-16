@@ -14,7 +14,7 @@ export class Canvas<T> {
 		}
 	}
 
-	draw() {
+	dump() {
 
 		let rowNumbers = Object.keys(this.data).map(x => x.toNumber());
 		let firstRow = rowNumbers.min(0) as number;
@@ -38,7 +38,7 @@ export class Canvas<T> {
 			console.log(s);
 		}
 	}
-	paintCell(color: T): string {
+	protected paintCell(color: T): string {
 		return color ? "# " : "  ";
 	}
 

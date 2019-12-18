@@ -177,21 +177,31 @@ class Vacuum implements Env {
 	start = new Pixel(0, 0);
 
 	output(a: number): boolean {
-		if (a == 10) {
-			this.start = this.start.down();
-			this.start.x = 0;
-		} else {
+		// if (a == 10) {
+		// 	this.start = this.start.down();
+		// 	this.start.x = 0;
+		// } else {
 
-			this.c.paint(this.start, String.fromCharCode(a));
-			this.start = this.start.right();
-		}
-		//sleep(10);
-		//this.c.render();
+		// 	this.c.paint(this.start, String.fromCharCode(a));
+		// 	this.start = this.start.right();
+		// }
+		// //sleep(10);
+		// //this.c.render();
+		// return CONTINUE;
+
+		console.log(a);
+
 		return CONTINUE;
 	}
 
 	input(): number {
-		throw new Error("Method not implemented.");
+		return asci.shift() as number;
+	}
+
+	drive() {
+		code[0] = 2; // turn on
+		var runtime = new Runtime(code);
+		runtime.execute(this);
 	}
 
 	snap() {
@@ -230,7 +240,26 @@ class Vacuum implements Env {
 }
 
 let v = new Vacuum();
-v.snap();
-console.log(v.path());
+// v.snap();
+// console.log(v.path());
 
+let program = [
+	'C,A,C,C,A,B,A,B,B,A', // main
+	'R8,L12,L12,R8', // a
+	'L6,R6,L12', // b
+	'L12,R8,L6,R8,L6', // c
+	'n'
+]
 
+let asci = program.join(',').split('').map(x => x.charCodeAt(0));
+
+v.drive();
+
+/*
+
+M = C,A,C,C,A,B,A,B,B,A
+A = R8,L12,L12,R8
+B = L6,R6,L12
+C = L12,R8,L6,R8,L6
+
+*/

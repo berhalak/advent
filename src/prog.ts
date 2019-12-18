@@ -33,7 +33,7 @@ export class Dot<T> extends Pixel {
 export class Canvas<T> {
 
 	list() {
-		return [...this.all()];
+		return [...this.iter()];
 	}
 
 	find(value: T): Pixel {

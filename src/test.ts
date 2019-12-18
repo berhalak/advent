@@ -176,26 +176,47 @@ class Vacuum implements Env {
 
 	start = new Pixel(0, 0);
 
+	last = 0;
+
 	output(a: number): boolean {
-		// if (a == 10) {
-		// 	this.start = this.start.down();
-		// 	this.start.x = 0;
-		// } else {
 
-		// 	this.c.paint(this.start, String.fromCharCode(a));
-		// 	this.start = this.start.right();
-		// }
-		// //sleep(10);
-		// //this.c.render();
-		// return CONTINUE;
+		this.last = a;
 
-		console.log(a);
+		if (a == 10) {
+			this.start = this.start.down();
+			this.start.x = 0;
+		} else {
+
+			this.c.paint(this.start, String.fromCharCode(a));
+			this.start = this.start.right();
+		}
+
 
 		return CONTINUE;
+
 	}
 
+	draw() {
+		this.c.render();
+	}
+
+	height = 0;
+
 	input(): number {
-		return asci.shift() as number;
+
+		// mark size;
+
+		this.height = this.c.list().map(x => x.y).max() as number;
+
+		this.c = new Canvas('.');
+
+
+		let code = asci.shift() as number;
+
+		// let converted = asci.map(x => String.fromCharCode(x)).join('');
+		// console.log(converted);
+
+		return code;
 	}
 
 	drive() {
@@ -245,15 +266,17 @@ let v = new Vacuum();
 
 let program = [
 	'C,A,C,C,A,B,A,B,B,A', // main
-	'R8,L12,L12,R8', // a
-	'L6,R6,L12', // b
-	'L12,R8,L6,R8,L6', // c
-	'n'
+	'R,8,L,12,L,12,R8', // a
+	'L,6,R,6,L,12', // b
+	'L,12,R,8,L,6,R,8,L,6', // c
+	'y'
 ]
 
-let asci = program.join(',').split('').map(x => x.charCodeAt(0));
+let asci = (program.join('\n') + '\n').split('').map(x => x.charCodeAt(0));
 
 v.drive();
+
+v.draw();
 
 /*
 
@@ -263,3 +286,5 @@ B = L6,R6,L12
 C = L12,R8,L6,R8,L6
 
 */
+
+console.log(v.last);

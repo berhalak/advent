@@ -12,6 +12,45 @@ for (let i = 0; i < 10000; i++) {
 }
 
 let offset = 5976733;
+
+
+function calcNumber(pos: number, nums: number[]): number {
+
+
+	let sum = 0;
+	for (let i = pos; i < nums.length;) {
+		for (let t = i; t <= i + pos && t < nums.length; t++) {
+			sum += nums[t];
+		}
+		let subStart = i + pos + 1 + pos + 1;
+		let subEnd = subStart + pos;
+		for (let t = subStart; t <= subEnd && t < nums.length; t++) {
+			sum -= nums[t];
+		}
+		i = subEnd + 1 + pos + 1;
+	}
+	return Math.abs(sum) % 10;
+}
+
+
+
+function transform(input: number[]): number[] {
+	let out: number[] = [];
+
+	for (let i = 5976733; i < input.length; i++) {
+		if ((i - 5976733) % 10000 == 0)
+			console.log(i - 5976733);
+		out.push(calcNumber(i, input));
+	}
+
+
+	for (let i = 5976733; i < input.length; i++) {
+		input[i] = out[i];
+	}
+
+	return input;
+}
+
 let phase = 0;
 
 function sum(start: number, arr: number[]) {
@@ -42,7 +81,7 @@ while (phase != 100) {
 	console.log(phase);
 }
 
-let result = input.skip(offset).take(8).join('');
+let result = input.skip(offset - 1).take(8).join('');
 console.log(result);
 
 

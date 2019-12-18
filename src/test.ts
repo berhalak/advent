@@ -178,10 +178,11 @@ class Vacuum implements Env {
 
 	last = 0;
 
+	line = '';
+
 	output(a: number): boolean {
 
 		this.last = a;
-
 		if (a == 10) {
 			this.start = this.start.down();
 			this.start.x = 0;
@@ -190,6 +191,12 @@ class Vacuum implements Env {
 			this.c.paint(this.start, String.fromCharCode(a));
 			this.start = this.start.right();
 		}
+		
+		this.line += String.fromCharCode(a);
+		if (a == 10){
+	//		console.log(this.line.trim());
+			this.line = '';
+		}
 
 
 		return CONTINUE;
@@ -197,7 +204,7 @@ class Vacuum implements Env {
 	}
 
 	draw() {
-		this.c.render();
+		this.c.render(true);
 	}
 
 	height = 0;
@@ -206,7 +213,6 @@ class Vacuum implements Env {
 
 		// mark size;
 
-		this.height = this.c.list().map(x => x.y).max() as number;
 
 		this.c = new Canvas('.');
 
@@ -228,7 +234,8 @@ class Vacuum implements Env {
 	snap() {
 		var runtime = new Runtime(code);
 		runtime.execute(this);
-		this.c.render(true);
+	//	this.c.render(true);
+		this.height = this.c.height();
 	}
 
 	path() {
@@ -261,22 +268,22 @@ class Vacuum implements Env {
 }
 
 let v = new Vacuum();
-// v.snap();
+//
 // console.log(v.path());
 
 let program = [
 	'C,A,C,C,A,B,A,B,B,A', // main
-	'R,8,L,12,L,12,R8', // a
+	'R,8,L,12,L,12,R,8', // a
 	'L,6,R,6,L,12', // b
 	'L,12,R,8,L,6,R,8,L,6', // c
-	'y'
+	'n'
 ]
 
 let asci = (program.join('\n') + '\n').split('').map(x => x.charCodeAt(0));
 
 v.drive();
 
-v.draw();
+//v.draw();
 
 /*
 

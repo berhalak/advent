@@ -31,6 +31,9 @@ export class Dot<T> extends Pixel {
 }
 
 export class Canvas<T> {
+	height(): number {
+		return Object.keys(this.data).map(x=> x.toNumber()).max() as number;
+	}
 
 	list() {
 		return [...this.iter()];

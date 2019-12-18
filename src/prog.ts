@@ -1,8 +1,49 @@
 import { IncomingMessage } from "http";
 import { createWriteStream } from "fs";
-import { Point, read } from "./lib";
+import { Point, read, Pos } from "./lib";
+
+
+export class Pixel extends Pos {
+
+	up() {
+		return new Pixel(this.x, this.y - 1);
+	}
+
+	down() {
+		return new Pixel(this.x, this.y + 1);
+	}
+
+	left() {
+		return new Pixel(this.x - 1, this.y);
+	}
+
+	right() {
+		return new Pixel(this.x + 1, this.y);
+	}
+}
+
+export class Dot<T> extends Pixel {
+	value!: T;
+	constructor(p: Pos, private c: Canvas<T>) {
+		super(p.x, p.y);
+		this.value = c.at(this);
+	}
+}
 
 export class Canvas<T> {
+
+	list() {
+		return [...this.all()];
+	}
+
+	find(value: T): Pixel {
+		for (let x of this.iter()) {
+			if (this.at(x) == value) {
+				return x;
+			}
+		}
+		return new Pixel(-1, -1);
+	}
 
 	*all() {
 		for (let row of Object.values(this.data)) {
@@ -17,12 +58,17 @@ export class Canvas<T> {
 	*iter() {
 		for (let row of Object.keys(this.data)) {
 			for (let col of Object.keys(this.data[row])) {
-				yield new Point(col.toNumber(), row.toNumber());
+				yield new Pixel(col.toNumber(), row.toNumber());
 			}
 		}
 	}
 
-	dump() {
+	render(up = false) {
+		console.clear();
+		this.dump(up);
+	}
+
+	dump(up = false) {
 
 		let rowNumbers = Object.keys(this.data).map(x => x.toNumber());
 		let firstRow = rowNumbers.min(0) as number;
@@ -37,6 +83,18 @@ export class Canvas<T> {
 			lastCol = Math.max(lastCol, colNumbers.max() as number);
 		}
 
+		if (up) {
+			for (let y = firstRow; y <= lastRow; y++) {
+				let s = "";
+				for (let x = firstCol; x <= lastCol; x++) {
+					let color = this.get(x, y);
+					s += this.paintCell(color);
+				}
+				console.log(s);
+			}
+			return;
+		}
+
 		for (let y = lastRow; y >= firstRow; y--) {
 			let s = "";
 			for (let x = firstCol; x <= lastCol; x++) {
@@ -46,15 +104,16 @@ export class Canvas<T> {
 			console.log(s);
 		}
 	}
+
 	protected paintCell(color: T): string {
-		return color ? "# " : "  ";
+		return `${color}`;
 	}
 
 	constructor(private def: T) {
 
 	}
 
-	painted(): any {
+	sumOfPainted(): any {
 		let sum = 0;
 		for (let key in this.data) {
 			sum += Object.keys(this.data[key]).length;
@@ -78,11 +137,11 @@ export class Canvas<T> {
 		return val;
 	}
 
-	paint(p: Point, color: T) {
+	paint(p: Pos, color: T) {
 		this.set(p.x, p.y, color);
 	}
 
-	at(p: Point) {
+	at(p: Pos) {
 		return this.get(p.x, p.y);
 	}
 
@@ -447,6 +506,9 @@ function instruction(op: number) {
 }
 
 
+export const HALT = false;
+export const CONTINUE = true;
+
 export interface Env {
 	output(a: number): boolean;
 	input(): number;
@@ -479,7 +541,7 @@ export class Runtime {
 
 
 
-			if (ins.invoke(this, env) === false) {
+			if (ins.invoke(this, env) === HALT) {
 				return;
 			}
 		}
